@@ -1,0 +1,25 @@
+{
+  "name": "electron-use-ipc",
+  "version": "0.1.0",
+  "description": "Type-safe Electron IPC with hook-style APIs",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts",
+    "./core": "./src/core/index.ts",
+    "./main": "./src/main/index.ts",
+    "./preload": "./src/preload/index.ts",
+    "./renderer": "./src/renderer/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "electron": ">=20",
+    "typescript": ">=5.0"
+  },
+  "devDependencies": {
+    "electron": "^43.3.0",
+    "typescript": "^7.0.2"
+  }
+}
