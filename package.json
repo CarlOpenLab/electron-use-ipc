@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Type-safe Electron IPC with hook-style APIs",
   "type": "module",
+  "packageManager": "pnpm@11.20.0",
   "license": "MIT",
   "files": [
     "dist"
