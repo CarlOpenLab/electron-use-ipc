@@ -2,7 +2,7 @@
 // If tsc passes, the types are BOTH correct (positive cases) AND strict
 // (these bad cases really error). If an @ts-expect-error becomes unused,
 // that line leaked `any`.
-import { useEvent, useInvoke } from '../src/renderer'
+import { useEvent, useInvoke } from '@cc-heart/electron-use-ipc/renderer'
 import { api } from './shared/api'
 
 const { call } = useInvoke(api.invoke.getUser)

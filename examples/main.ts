@@ -1,4 +1,4 @@
-import { registerMain } from '../src/main'
+import { registerMain } from '@cc-heart/electron-use-ipc/main'
 import { api, type User } from './shared/api'
 
 const users = new Map<string, User>()

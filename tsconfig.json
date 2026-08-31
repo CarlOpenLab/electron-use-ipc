@@ -10,7 +10,11 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "declaration": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "paths": {
+      "@cc-heart/electron-use-ipc": ["./src/index.ts"],
+      "@cc-heart/electron-use-ipc/*": ["./src/*/index.ts"]
+    }
   },
   "include": ["src", "examples"]
 }

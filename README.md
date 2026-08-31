@@ -1,4 +1,4 @@
-# electron-use-ipc
+# @cc-heart/electron-use-ipc
 
 Type-safe Electron IPC with **hook-style** APIs. Define the contract once, get
 full type inference across main / preload / renderer — no duplicated types.
@@ -12,11 +12,15 @@ full type inference across main / preload / renderer — no duplicated types.
 
 ## Quick start
 
+```bash
+npm install @cc-heart/electron-use-ipc
+```
+
 ### 1. Define the contract (shared)
 
 ```ts
 // shared/api.ts
-import { defineApi, defineEvent, defineInvoke } from 'electron-use-ipc'
+import { defineApi, defineEvent, defineInvoke } from '@cc-heart/electron-use-ipc'
 
 export interface User { id: string; name: string }
 
@@ -36,7 +40,7 @@ export const api = defineApi({
 ### 2. Main process
 
 ```ts
-import { registerMain } from 'electron-use-ipc/main'
+import { registerMain } from '@cc-heart/electron-use-ipc/main'
 import { api } from '../shared/api'
 
 const main = registerMain(api, {
@@ -57,7 +61,7 @@ main.emit(api.events['server:shutdown'])          // void event: no payload
 ### 3. Preload
 
 ```ts
-import { exposeBridge } from 'electron-use-ipc/preload'
+import { exposeBridge } from '@cc-heart/electron-use-ipc/preload'
 import { api } from '../shared/api'
 
 exposeBridge(api)   // -> window.api
@@ -66,7 +70,7 @@ exposeBridge(api)   // -> window.api
 ### 4. Renderer (hook-style)
 
 ```ts
-import { useInvoke, useEvent } from 'electron-use-ipc/renderer'
+import { useInvoke, useEvent } from '@cc-heart/electron-use-ipc/renderer'
 import { api } from '../shared/api'
 
 const { data, loading, call } = useInvoke(api.invoke.getUser)

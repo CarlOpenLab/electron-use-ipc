@@ -1,4 +1,4 @@
-import { useEvent, useInvoke } from '../src/renderer'
+import { useEvent, useInvoke } from '@cc-heart/electron-use-ipc/renderer'
 import { api } from './shared/api'
 
 /* ---- request / response hook ---- */

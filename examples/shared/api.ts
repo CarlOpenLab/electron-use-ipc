@@ -1,4 +1,4 @@
-import { defineApi, defineEvent, defineInvoke } from '../../src'
+import { defineApi, defineEvent, defineInvoke } from '@cc-heart/electron-use-ipc'
 
 export interface User {
   id: string
