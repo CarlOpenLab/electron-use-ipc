@@ -1,0 +1,76 @@
+name: Deploy site
+
+# The landing page and docs live in `site/` and are pure static output, so they
+# deploy straight to GitHub Pages. `site/dist` is gitignored: it is built here
+# from the same commit, which keeps the displayed library source (read at build
+# time by plugins/shiki-snippets.ts) in lockstep with the deployed page.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and never cancel one in flight: a half-published
+# Pages artifact is worse than a queued build.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Reads the exact pnpm version from packageManager in package.json.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck the site
+        run: pnpm -C site typecheck
+
+      # Resolves the base path for us, so a custom domain added later keeps
+      # working without touching the config.
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v6
+
+      # `site`'s build script builds the library first, then vite-ssg: the page
+      # measures `dist/` and reads the real source files while it renders.
+      - name: Build the site
+        run: pnpm -C site build
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+
+      # Pages has no rewrite rules, so an unknown URL falls back to this file.
+      # It is the prerendered landing page, which hydrates and routes to the
+      # catch-all NotFound view.
+      - name: Add 404 fallback
+        run: cp site/dist/index.html site/dist/404.html
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
