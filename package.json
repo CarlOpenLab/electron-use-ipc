@@ -8,6 +8,14 @@
   "files": [
     "dist"
   ],
+  "homepage": "https://carlopenlab.github.io/electron-use-ipc/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CarlOpenLab/electron-use-ipc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CarlOpenLab/electron-use-ipc/issues"
+  },
   "sideEffects": false,
   "main": "./dist/index.js",
   "module": "./dist/index.js",
