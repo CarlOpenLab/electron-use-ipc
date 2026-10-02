@@ -3,6 +3,9 @@
 Type-safe Electron IPC with **hook-style** APIs. Define the contract once, get
 full type inference across main / preload / renderer — no duplicated types.
 
+📖 **[Documentation & live demo](https://carlopenlab.github.io/electron-use-ipc/)** — the full
+guide, the API reference, and every snippet checked against this repository.
+
 - 🔒 **End-to-end type inference** — one `defineApi()`, every arg / return /
   payload is inferred everywhere via type tokens.
 - 🪝 **Hook-style calls** — `useInvoke()` / `useEvent()` return reactive signals,
