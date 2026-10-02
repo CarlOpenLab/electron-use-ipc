@@ -143,11 +143,18 @@
    `defaultColor: false` means Shiki emits NO plain `color`/`background-color`
    for either theme — everything is a `--shiki-light` / `--shiki-dark` custom
    property. Both blocks are therefore required; styling only `.dark` leaves
-   light mode completely colourless. */
+   light mode completely colourless.
+
+   Colours only here, never `background-color`. Shiki's own recipe also paints
+   the theme background onto every span, which is invisible while spans are
+   inline — but `.line` is `display: block` below so code can wrap, and a
+   block-level span paints its entire row. Each line then becomes a full-width
+   bar of `#ffffff` (`#0d1117` in dark) laid over the surface colour, leaving
+   the surface visible as a grey frame around it. Colour lives on the tokens,
+   the background lives on the surface. */
 .shiki,
 .shiki span {
   color: var(--shiki-light);
-  background-color: var(--shiki-light-bg);
   font-style: var(--shiki-light-font-style);
   font-weight: var(--shiki-light-font-weight);
   text-decoration: var(--shiki-light-text-decoration);
@@ -156,7 +163,6 @@
 html.dark .shiki,
 html.dark .shiki span {
   color: var(--shiki-dark) !important;
-  background-color: var(--shiki-dark-bg) !important;
   font-style: var(--shiki-dark-font-style) !important;
   font-weight: var(--shiki-dark-font-weight) !important;
   text-decoration: var(--shiki-dark-text-decoration) !important;
