@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>electron-use-ipc — Type-safe IPC for Electron</title>
+    <meta
+      name="description"
+      content="Type-safe Electron IPC with hook-style APIs. Define the contract once, get full type inference across main, preload and renderer."
+    />
+    <!--
+      Zero-FOUC theme bootstrap. Must run synchronously before first paint and
+      before any stylesheet, so `dark` is on <html> by the time CSS applies.
+      <html> is not part of the Vue template, so this never affects hydration.
+    -->
+    <script>
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('theme')
+          var dark = stored
+            ? stored === 'dark'
+            : matchMedia('(prefers-color-scheme: dark)').matches
+          document.documentElement.classList.toggle('dark', dark)
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

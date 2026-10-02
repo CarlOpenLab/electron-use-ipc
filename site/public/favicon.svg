@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="electron-use-ipc">
+  <style>
+    .plate { fill: #ffffff; }
+    .rule { stroke: #e5e5e5; }
+    .node { fill: #9a9a9a; }
+    .source { fill: #009ca5; }
+    @media (prefers-color-scheme: dark) {
+      .plate { fill: #0d0d0d; }
+      .rule { stroke: #333333; }
+      .node { fill: #7a7a7a; }
+      .source { fill: #14bbc2; }
+    }
+  </style>
+
+  <rect class="plate" width="32" height="32" rx="7" />
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="none" class="rule" />
+
+  <!-- One contract, three processes: a single source branching onto the bus. -->
+  <g class="rule" stroke-width="1.2" fill="none" stroke-linecap="round">
+    <path d="M16 10.4V16" />
+    <path d="M7.5 16h17" />
+    <path d="M7.5 16v4.6" />
+    <path d="M16 16v4.6" />
+    <path d="M24.5 16v4.6" />
+  </g>
+
+  <circle class="source" cx="16" cy="7.6" r="2.9" />
+  <circle class="node" cx="7.5" cy="23.2" r="2.4" />
+  <circle class="node" cx="16" cy="23.2" r="2.4" />
+  <circle class="node" cx="24.5" cy="23.2" r="2.4" />
+</svg>
