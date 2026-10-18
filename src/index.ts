@@ -1,5 +1,5 @@
 export * from './core'
 export type { UseInvokeResult } from './renderer'
-export { invoke, useInvoke, useEvent } from './renderer'
+export { invoke, useInvoke, useEvent, sendSync } from './renderer'
 export { registerMain } from './main'
 export { exposeBridge } from './preload'
