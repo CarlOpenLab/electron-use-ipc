@@ -1,5 +1,5 @@
 // Consumer-side type smoke test: compiled against the BUILT package exports.
-import { defineApi, defineEvent, defineInvoke } from '@cc-heart/electron-use-ipc'
+import { defineApi, defineEvent, defineInvoke, defineSendSync } from '@cc-heart/electron-use-ipc'
 import { registerMain } from '@cc-heart/electron-use-ipc/main'
 import { exposeBridge } from '@cc-heart/electron-use-ipc/preload'
 import { useEvent, useInvoke } from '@cc-heart/electron-use-ipc/renderer'
@@ -10,6 +10,10 @@ interface User { id: string; name: string }
 const api = defineApi({
   invoke: {
     getUser: defineInvoke<[string], User>(),
+    getUserForWindow: defineInvoke<[string], User>({withEventParam: true}),
+  },
+  sendSync: {
+    windowAware: defineSendSync<[number], string>({withEventParam: true}),
   },
   events: {
     'user:updated': defineEvent<User>(),
@@ -19,7 +23,11 @@ const api = defineApi({
 const main = registerMain(api, {
   invoke: {
     getUser: async (id) => ({ id, name: id }),
+    getUserForWindow: async (event, id) => ({ id: event.sender.id.toString(), name: id }),
   },
+  sendSync: {
+    windowAware: (event, num) => `${event.sender.id} ${num}`
+  }
 })
 main.emit(api.events['user:updated'], { id: '1', name: 'a' })
 
