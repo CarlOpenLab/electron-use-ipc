@@ -71,13 +71,13 @@ export type EventPayload<T> = T extends EventToken<infer P> ? P : never
 
 /** The bridge contract exposed on `window.api` by the preload script. */
 export interface Bridge {
-  invoke<A extends AnyArgs, R>(
-    token: InvokeToken<A, R>,
+  invoke<A extends AnyArgs, R, W extends boolean>(
+    token: InvokeToken<A, R, W>,
     ...args: A
   ): Promise<R>
   
-  sendSync<A extends AnyArgs, R>(
-    token: SendSyncToken<A, R>,
+  sendSync<A extends AnyArgs, R, W extends boolean>(
+    token: SendSyncToken<A, R, W>,
     ...args: A
   ): R
 
