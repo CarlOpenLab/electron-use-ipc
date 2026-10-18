@@ -6,6 +6,7 @@ import type {
   InvokeArgs,
   InvokeReturn,
   InvokeToken,
+  SendSyncToken,
 } from '../core/types'
 import { signal, type Signal } from '../core/signal'
 
@@ -27,6 +28,17 @@ export function invoke<A extends AnyArgs, R>(
   ...args: A
 ): Promise<R> {
   return window.api.invoke(token, ...args)
+}
+
+/**
+ * Invoke an IPC method imperatively (blocking, no promises).
+ * Fully typed from the token.
+ */
+export function sendSync<A extends AnyArgs, R>(
+  token: SendSyncToken<A, R>,
+  ...args: A
+): R {
+  return window.api.sendSync(token, ...args)
 }
 
 export interface UseInvokeResult<A extends AnyArgs, R> {
@@ -87,8 +99,8 @@ export function useInvoke<A extends AnyArgs, R>(
  */
 export function useEvent<P>(
   token: EventToken<P>,
-): Signal<P | undefined> {
-  const s = signal<P | undefined>(undefined)
+): Signal<P> {
+  const s = signal<P>()
   window.api.on(token, (payload) => s.set(payload))
   return s
 }
