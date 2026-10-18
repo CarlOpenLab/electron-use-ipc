@@ -1,7 +1,7 @@
-import { BrowserWindow, ipcMain, IpcMainEvent } from 'electron'
+import { BrowserWindow, ipcMain, IpcMainEvent, IpcMainInvokeEvent } from 'electron'
 import type { ApiSchema } from '../core/types'
 import { eventChannel, invokeChannel, sendSyncChannel } from '../core/channels'
-import { EventEmitter, InvokeHandlers, SendSyncHandlers } from './main_types'
+import {EventEmitter, InvokeHandlers, SendSyncHandlers } from './main_types'
 
 export interface RegisterMainResult<S extends ApiSchema> extends EventEmitter<S> {}
 
@@ -23,59 +23,70 @@ export function registerMain<S extends ApiSchema>(
   schema: S,
   handlers: {
     invoke?: InvokeHandlers<S>,
-    sendSync?: SendSyncHandlers<S>
+    invokeWithEvent?: InvokeHandlers<S, [IpcMainInvokeEvent]>,
+    invokeWithSenderId?: InvokeHandlers<S, [number]>,
+    sendSync?: SendSyncHandlers<S>,
+    sendSyncWithEvent?: SendSyncHandlers<S, [IpcMainEvent]>
+    sendSyncWithSenderId?: SendSyncHandlers<S, [number]>
   },
 ): RegisterMainResult<S> {
   const unregisters: Array<() => void> = []
 
-  if (handlers.invoke && schema.invoke) {
-    for (const key of Object.keys(handlers.invoke) as Array<keyof typeof handlers.invoke>) {
-      const fn = handlers.invoke[key]
-      if (typeof fn !== 'function') continue
-      const token = schema.invoke[key as string]
-      if (!token) continue
-      const channel = invokeChannel(token)
+  const registerInvokeGroup = <K extends keyof NonNullable<S['invoke']>>(
+    handlerMap: Partial<Record<K, any>> | undefined,
+    invokeWrapper: (fn: any, event: IpcMainInvokeEvent, args: unknown[]) => unknown
+  ) => {
+    if (!handlerMap || !schema.invoke) return;
+
+    for (const key of Object.keys(handlerMap) as Array<keyof typeof handlerMap>) {
+      const fn = handlerMap[key];
+      if (typeof fn !== 'function') continue;
+
+      const token = schema.invoke[key as string];
+      if (!token) continue;
+      
+      const channel = invokeChannel(token);
+
       ipcMain.handle(channel, (event, ...args: unknown[]) => {
-        const handler = fn as (...a: any[]) => unknown
-        if (token.__withEventParam) {
-          return handler(event, ...args)
-        }
-        return handler(...args)
-      })
-      unregisters.push(() => ipcMain.removeHandler(channel))
+        return invokeWrapper(fn, event, args);
+      });
+
+      unregisters.push(() => ipcMain.removeHandler(channel));
     }
-  }
+  };
 
-  if (handlers.sendSync && schema.sendSync) {
-    for (const key of Object.keys(
-      handlers.sendSync,
-    ) as Array<keyof typeof handlers.sendSync>) {
-      const fn = handlers.sendSync[key]
-      if (typeof fn !== 'function') continue
+  const registerSendSyncGroup = <K extends keyof NonNullable<S['sendSync']>>(
+    handlerMap: Partial<Record<K, any>> | undefined,
+    sendSyncWrapper: (fn: any, event: IpcMainEvent, args: unknown[]) => unknown
+  ) => {
+    if (!handlerMap || !schema.sendSync) return;
 
-      const token = schema.sendSync[key as string]
-      if (!token) continue
+    for (const key of Object.keys(handlerMap) as Array<keyof typeof handlerMap>) {
+      const fn = handlerMap[key];
+      if (typeof fn !== 'function') continue;
 
-      const channel = sendSyncChannel(token)
+      const token = schema.sendSync[key as string];
+      if (!token) continue;
+      
+      const channel = sendSyncChannel(token);
 
-      const listener = (
-        event: IpcMainEvent,
-        ...args: unknown[]
-      ) => {
-        const handler = fn as (...a: any[]) => unknown
+      const listener = (event: IpcMainEvent, ...args: unknown[]) => {
+        event.returnValue = sendSyncWrapper(fn, event, args);
+      };
 
-        event.returnValue = token.__withEventParam
-          ? handler(event, ...args)
-          : handler(...args)
-      }
+      ipcMain.on(channel, listener);
 
-      ipcMain.on(channel, listener)
-
-      unregisters.push(() => {
-        ipcMain.removeListener(channel, listener)
-      })
+      unregisters.push(() => ipcMain.removeListener(channel, listener));
     }
-  }
+  };
+
+  registerInvokeGroup(handlers.invoke, (fn, _event, args) => fn(...args));
+  registerInvokeGroup(handlers.invokeWithEvent, (fn, event, args) => fn(event, ...args));
+  registerInvokeGroup(handlers.invokeWithSenderId, (fn, event, args) => fn(event.sender.id, ...args));
+
+  registerSendSyncGroup(handlers.sendSync, (fn, _event, args) => fn(...args));
+  registerSendSyncGroup(handlers.sendSyncWithEvent, (fn, event, args) => fn(event, ...args));
+  registerSendSyncGroup(handlers.sendSyncWithSenderId, (fn, event, args) => fn(event.sender.id, ...args));
 
   const emit: EventEmitter<S>['emit'] = (token, ...payload) => {
     const channel = eventChannel(token as never)

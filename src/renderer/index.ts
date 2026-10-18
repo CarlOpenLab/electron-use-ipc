@@ -23,8 +23,8 @@ declare global {
  * Invoke an IPC method imperatively (one-shot, no reactive state).
  * Fully typed from the token.
  */
-export function invoke<A extends AnyArgs, R, W extends boolean>(
-  token: InvokeToken<A, R, W>,
+export function invoke<A extends AnyArgs, R>(
+  token: InvokeToken<A, R>,
   ...args: A
 ): Promise<R> {
   return window.api.invoke(token, ...args)
@@ -34,8 +34,8 @@ export function invoke<A extends AnyArgs, R, W extends boolean>(
  * Invoke an IPC method imperatively (blocking, no promises).
  * Fully typed from the token.
  */
-export function sendSync<A extends AnyArgs, R, W extends boolean>(
-  token: SendSyncToken<A, R, W>,
+export function sendSync<A extends AnyArgs, R>(
+  token: SendSyncToken<A, R>,
   ...args: A
 ): R {
   return window.api.sendSync(token, ...args)

@@ -7,94 +7,35 @@ import type {
 } from './types'
 
 /**
- * Define an async request/response IPC method. Returns a type token.
- * 
- * Overloads are the only reliable way to insure that type inference
- * correctly captures the optional `withEventParam` parameter.
- * 
- * @example
- *   getUser: defineInvoke<[string], User>({ withEventParam: true })
- */
-export function defineInvoke<Args extends AnyArgs, Return>(
-  options: { withEventParam: true },
-): InvokeToken<Args, Return, true>
-
-/**
- * Define an async request/response IPC method. Returns a type token.
- * 
- * Overloads are the only reliable way to insure that type inference
- * correctly captures the optional `withEventParam` parameter.
+ * Define a request/response IPC method. Returns a type token.
  * 
  * @example
  *   getUser: defineInvoke<[string], User>()
  */
-export function defineInvoke<Args extends AnyArgs, Return>(
-  options?: { withEventParam?: false },
-): InvokeToken<Args, Return, false>
-
-/**
- * Define a request/response IPC method. Returns a type token.
- * 
- * @example
- *   getUser: defineInvoke<[string], User>({ withEventParam: false })
- */
 export function defineInvoke<
   Args extends AnyArgs = [],
   Return = void,
->(
-  options?: { withEventParam?: boolean },
-): InvokeToken<
-  Args,
-  Return,
-  boolean
-> {
+>(): InvokeToken<Args, Return> {
   return {
     __kind: 'invoke',
     __path: '',
-    __withEventParam: options?.withEventParam === true,
   } as never
 }
 
 /**
  * Define a synchronous request/response IPC method. Returns a type token.
  * 
- * Overloads are the only reliable way to insure that type inference
- * correctly captures the optional `withEventParam` parameter.
- * 
- * @example
- *   getUser: defineSendSync<[string], User>({ withEventParam: true })
- */
-export function defineSendSync<Args extends AnyArgs, Return>(
-  options: { withEventParam: true },
-): SendSyncToken<Args, Return, true>
-
-/**
- * Define a synchronous request/response IPC method. Returns a type token.
- * 
- * Overloads are the only reliable way to insure that type inference
- * correctly captures the optional `withEventParam` parameter.
- * 
  * @example
  *   getUser: defineSendSync<[string], User>()
  */
-export function defineSendSync<Args extends AnyArgs, Return>(
-  options?: { withEventParam?: false },
-): SendSyncToken<Args, Return, false>
-
-/**
- * Define a synchronous request/response IPC method. Returns a type token.
- * 
- * @example
- *   getUser: defineSendSync<[string], User>({ withEventParam: false })
- */
-export function defineSendSync(
-  options?: { withEventParam?: boolean },
-): SendSyncToken<AnyArgs, unknown, boolean> {
+export function defineSendSync<
+  Args extends AnyArgs = [],
+  Return = void,
+>(): SendSyncToken<Args, Return> {
   return {
     __kind: 'sendSync',
     __path: '',
-    __withEventParam: options?.withEventParam === true,
-  } as SendSyncToken<AnyArgs, unknown, boolean>
+  } as never
 }
 
 /**

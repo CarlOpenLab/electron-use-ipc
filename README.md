@@ -33,8 +33,7 @@ export const api = defineApi({
     getUser:        defineInvoke<[string], User>(),
     listUsers:      defineInvoke<[], User[]>(),
     createUser:     defineInvoke<[string], User>(),
-    // IpcMainInvokeEvent will also be sent as the first param to the handler
-    getWindowTitle: defineInvoke<[number], string>({ withEventParam: true }),
+    getWindowTitle: defineInvoke<[number], string>(),
   },
   // Synchronous calls, blocking
   sendSync: {
@@ -63,13 +62,18 @@ const main = registerMain(api, {
       main.emit(api.events['user:updated'], u)    // payload typed: User
       return u
     },
-    //`event` is an `IpcMainInvokeEvent`, note that this ISN'T `async`
-    getWindowTitle: (event, version) =>
-      `Window ${event.sender.id} v${version}`,
+  },
+  invokeWithSenderId: {
+    // Handlers here also relate to `invoke` methods in the schema,
+    // but get the id of the originating window as a prepended argument.
+    getWindowTitle: async (sender, version) =>
+      `Window ${sender} v${version}`,
   },
   sendSync: {
+    //note: not asynchronous
     isNativeDarkMode: () => nativeTheme.shouldUseDarkColors;
   }
+  // We can also have `invokeWithEvent`, `sendSyncWithEvent`, and `sendSyncWithSenderId`
 })
 
 main.emit(api.events['server:shutdown'])          // void event: no payload
@@ -109,8 +113,8 @@ const windowTitle: string = api.sendSync.getWindowTitle(69);
 | Function | Side | Purpose |
 |---|---|---|
 | `defineApi(schema)` | shared | Stamp channel paths onto tokens; preserve literal types |
-| `defineInvoke<Args, Return>(options)` | shared | Type token for an async request/response method |
-| `defineSendSync<Args, Return>(options)` | shared | Type token for a synchronous request/response method |
+| `defineInvoke<Args, Return>()` | shared | Type token for an async request/response method |
+| `defineSendSync<Args, Return>()` | shared | Type token for a synchronous request/response method |
 | `defineEvent<Payload>()` | shared | Type token for a main→renderer event |
 | `registerMain(api, { invoke })` | main | Register handlers; returns `{ emit, dispose }` |
 | `exposeBridge(api, name?)` | preload | Expose typed `window[name]` via `contextBridge` |
@@ -126,19 +130,17 @@ for those calls to be asynchronous.
 ## How the type inference works
 
 A token is a runtime-light object carrying a channel path, whose **type** is
-parameterized by `Args` / `Return` / `WithEventParam` / `Payload`:
+parameterized by `Args` / `Return` / `Payload`:
 
 ```ts
 interface InvokeToken<
   Args extends AnyArgs = [],
   Return = void,
-  WithEventParam extends boolean = false,
 > {
   readonly __kind: 'invoke'
   readonly __path: string
   readonly __args: Args
   readonly __return: Return
-  readonly __withEventParam: WithEventParam
 }
 ```
 
@@ -148,7 +150,8 @@ retains `InvokeToken<[string], User>`. From that point every consumer
 (e.g. `registerMain`, `exposeBridge`, `useInvoke`) extracts args/return via
 conditional types (`InvokeArgs`, `InvokeReturn`, etc.). **Define once, infer everywhere.**
 
-`invoke` methods are mapped to `ipcRenderer.invoke`, and the return (if any) is a `Promise` that needs an `await`
+`invoke` methods are mapped to `ipcRenderer.invoke`,
+and the return (if any) is a `Promise` that needs an `await`
 
 `sendSync` methods are mapped to `ipcRenderer.sendSync` **and are blocking**.
 Any return value will **not** be a `Promise`.
@@ -157,13 +160,23 @@ Best-practice is to prefer `invoke` unless it isn't technically possible to `awa
 e.g. When first loading a renderer, and you need to know if the native theme calls for dark mode
 before the `ready-to-show` fires so you can avoid the window flashing when it first loads.
 
-Both `invoke` and `sendSync` methods can optionally accept `({ withEventParam: true })` when
-defining the API. This will cause an extra parameter to be prepended to the handler aguments...
+There are also a couple of variants for handlers specified in `registerMain`:
+- `invoke` / `sendSync`
+- `invokeWithEvent` / `sendSyncWithEvent`
+- `invokeWithSenderId` / `sendSyncWithSenderId`
 
-For an `invoke` method, this parameter will be of type `IpcMainInvokeEvent`, and for a `sendSync` method
-it'll be `IpcMainEvent`.  A typical use of this event parameter is in multiple-window applications:
-Calling `event.sender.id` will uniquely identify the window that sent the event; this is the same id that
-can be accessed via `window.webContents.id` following the `ready-to-show` event.
+Internally, `invoke` call have a corresponding `IpcMainInvokeEvent`, and `sendSync` calls have an `IpcMainEvent`.  
+
+If you need this, you can define the handler in a `<kind>WithEvent` block, which will cause the relevant event
+object to be prepended as an argument.  But 99% of the time you don't want the full event object, you only really
+want to know the sending window (which is available via `event.sender.id`)
+
+That's the purpose of `<kind>WithSenderId` blocks, which internally get the numeric sender ID and prepend it as
+the first argument to your handler (instead of a full event object).
+
+The use of this event parameter is in multiple-window applications. As the sender will be the window id
+that can be accessed via `window.webContents.id` following the `ready-to-show` event. Allowing you to easily
+link events to the windows that sent them.
 
 
 ## Integrating with a UI framework

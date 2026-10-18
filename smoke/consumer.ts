@@ -10,10 +10,10 @@ interface User { id: string; name: string }
 const api = defineApi({
   invoke: {
     getUser: defineInvoke<[string], User>(),
-    getUserForWindow: defineInvoke<[string], User>({withEventParam: true}),
+    getUserForWindow: defineInvoke<[string], User>(),
   },
   sendSync: {
-    windowAware: defineSendSync<[number], string>({withEventParam: true}),
+    windowAware: defineSendSync<[number], string>(),
   },
   events: {
     'user:updated': defineEvent<User>(),
@@ -23,9 +23,11 @@ const api = defineApi({
 const main = registerMain(api, {
   invoke: {
     getUser: async (id) => ({ id, name: id }),
-    getUserForWindow: async (event, id) => ({ id: event.sender.id.toString(), name: id }),
   },
-  sendSync: {
+  invokeWithSenderId: {
+    getUserForWindow: async (windowId, userId) => ({ id: userId, name: `User ${userId} in window ${windowId}` }),
+  },
+  sendSyncWithEvent: {
     windowAware: (event, num) => `${event.sender.id} ${num}`
   }
 })

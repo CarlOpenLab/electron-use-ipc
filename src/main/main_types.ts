@@ -5,44 +5,42 @@ import type {
   EventPayload,
   InvokeArgs,
   InvokeReturn,
-  InvokeWithEventParam,
   SendSyncArgs,
   SendSyncReturn,
-  SendSyncWithEventParam,
 } from '../core/types'
 
-type InvokeHandler<T> =
-  InvokeWithEventParam<T> extends true
-    ? (
-        event: IpcMainInvokeEvent,
-        ...args: InvokeArgs<T>
-      ) => InvokeReturn<T> | Promise<InvokeReturn<T>>
-    : (
-        ...args: InvokeArgs<T>
-      ) => InvokeReturn<T> | Promise<InvokeReturn<T>>
+type MaybePromise<T> = T | Promise<T>;
 
-type SendSyncHandler<T> =
-  SendSyncWithEventParam<T> extends true
-    ? (
-        event: IpcMainEvent,
-        ...args: SendSyncArgs<T>
-      ) => SendSyncReturn<T>
-    : (
-        ...args: SendSyncArgs<T>
-      ) => SendSyncReturn<T>
+export type InvokeHandler<
+  T,
+  TContext extends unknown[] = []
+> = (...args: [...TContext, ...InvokeArgs<T>]) => MaybePromise<InvokeReturn<T>>;
+
+export type SendSyncHandler<
+  T,
+  TContext extends unknown[] = []
+> = (...args: [...TContext, ...SendSyncArgs<T>]) => SendSyncReturn<T>;
 
 /** Mapped handler map for async `invoke` calls to the main process. */
-export type InvokeHandlers<S extends ApiSchema> = {
+export type InvokeHandlers<
+  S extends ApiSchema,
+  TContext extends unknown[] = []
+> = {
   [K in keyof NonNullable<S['invoke']>]?: InvokeHandler<
-    NonNullable<S['invoke']>[K]
-  >
+    NonNullable<S['invoke']>[K],
+    TContext
+  >;
 }
 
 /** Mapped handler for synchronous main-process calls. */
-export type SendSyncHandlers<S extends ApiSchema> = {
+export type SendSyncHandlers<
+  S extends ApiSchema,
+  TContext extends unknown[] = []
+> = {
   [K in keyof NonNullable<S['sendSync']>]?: SendSyncHandler<
-    NonNullable<S['sendSync']>[K]
-  >
+    NonNullable<S['sendSync']>[K],
+    TContext
+  >;
 }
 
 /** The event emitter returned by `registerMain`. */

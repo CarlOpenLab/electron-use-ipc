@@ -13,26 +13,22 @@ export type AnyArgs = readonly unknown[]
 export interface InvokeToken<
   Args extends AnyArgs = [],
   Return = void,
-  WithEventParam extends boolean = false,
 > {
   readonly __kind: 'invoke'
   readonly __path: string
   readonly __args: Args
   readonly __return: Return
-  readonly __withEventParam: WithEventParam
 }
 
 /** Type token for a synchronous request/response IPC method. */
 export interface SendSyncToken<
   Args extends AnyArgs = [],
   Return = void,
-  WithEventParam extends boolean = false,
 > {
   readonly __kind: 'sendSync'
   readonly __path: string
   readonly __args: Args
   readonly __return: Return
-  readonly __withEventParam: WithEventParam
 }
 
 /** Type token for a one-way event pushed from main to renderer. */
@@ -52,32 +48,30 @@ export interface EventToken<Payload = void> {
  * not-undefined requirement for you.
  **/
 export interface ApiSchema {
-  invoke: Record<string, InvokeToken<any, any, any>>
-  sendSync: Record<string, SendSyncToken<any, any, any>>
+  invoke: Record<string, InvokeToken<any, any>>
+  sendSync: Record<string, SendSyncToken<any, any>>
   events: Record<string, EventToken<any>>
 }
 
 /* ----------------------- type-level extractors ----------------------- */
 
-export type SendSyncArgs<T> = T extends SendSyncToken<infer A, any, any> ? A : never
-export type SendSyncReturn<T> = T extends SendSyncToken<any, infer R, any> ? R : never
-export type SendSyncWithEventParam<T> = T extends SendSyncToken<any, any, infer E> ? E : false
+export type SendSyncArgs<T> = T extends SendSyncToken<infer A, any> ? A : never
+export type SendSyncReturn<T> = T extends SendSyncToken<any, infer R> ? R : never
 
-export type InvokeArgs<T> = T extends InvokeToken<infer A, any, any> ? A : never
-export type InvokeReturn<T> = T extends InvokeToken<any, infer R, any > ? R : never
-export type InvokeWithEventParam<T> = T extends InvokeToken<any, any, infer E> ? E : false
+export type InvokeArgs<T> = T extends InvokeToken<infer A, any> ? A : never
+export type InvokeReturn<T> = T extends InvokeToken<any, infer R> ? R : never
 
 export type EventPayload<T> = T extends EventToken<infer P> ? P : never
 
 /** The bridge contract exposed on `window.api` by the preload script. */
 export interface Bridge {
-  invoke<A extends AnyArgs, R, W extends boolean>(
-    token: InvokeToken<A, R, W>,
+  invoke<A extends AnyArgs, R>(
+    token: InvokeToken<A, R>,
     ...args: A
   ): Promise<R>
   
-  sendSync<A extends AnyArgs, R, W extends boolean>(
-    token: SendSyncToken<A, R, W>,
+  sendSync<A extends AnyArgs, R>(
+    token: SendSyncToken<A, R>,
     ...args: A
   ): R
 
