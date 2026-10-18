@@ -1,11 +1,7 @@
 import { BrowserWindow, ipcMain, IpcMainEvent } from 'electron'
-import type {
-  ApiSchema,
-  EventEmitter,
-  InvokeHandlers,
-  SendSyncHandlers,
-} from '../core/types'
+import type { ApiSchema } from '../core/types'
 import { eventChannel, invokeChannel, sendSyncChannel } from '../core/channels'
+import { EventEmitter, InvokeHandlers, SendSyncHandlers } from './main_types'
 
 export interface RegisterMainResult<S extends ApiSchema> extends EventEmitter<S> {}
 
