@@ -8,6 +8,7 @@ import type {
   InvokeToken,
   SendSyncToken,
 } from '../core/types'
+import { isIpcErrorEnvelope } from '../core/errors'
 import { signal, type Signal } from '../core/signal'
 
 export type { Signal }
@@ -31,19 +32,26 @@ export function invoke<A extends AnyArgs, R>(
 }
 
 /**
- * Invoke an IPC method imperatively (blocking, no promises).
- * Fully typed from the token.
+ * Invoke a synchronous IPC method imperatively.
+ *
+ * WARNING: `ipcRenderer.sendSync` blocks the whole renderer process until the
+ * main process replies. Prefer `invoke()` unless you truly need a synchronous
+ * result. Errors thrown by the main-process handler are rethrown here.
  */
 export function sendSync<A extends AnyArgs, R>(
   token: SendSyncToken<A, R>,
   ...args: A
 ): R {
-  return window.api.sendSync(token, ...args)
+  const result = window.api.sendSync(token, ...args)
+  if (isIpcErrorEnvelope(result)) {
+    throw new Error(result.__eui_error__)
+  }
+  return result
 }
 
 export interface UseInvokeResult<A extends AnyArgs, R> {
   data: Signal<R | undefined>
-  error: Signal<unknown | undefined>
+  error: Signal<unknown>
   loading: Signal<boolean>
   /** Re-run / run the method. Args are inferred from the token. */
   call: (...args: A) => Promise<R>
@@ -65,7 +73,7 @@ export function useInvoke<A extends AnyArgs, R>(
   options?: { immediate?: A },
 ): UseInvokeResult<A, R> {
   const data = signal<R | undefined>(undefined)
-  const error = signal<unknown | undefined>(undefined)
+  const error = signal<unknown>(undefined)
   const loading = signal(false)
 
   const call = async (...args: A): Promise<R> => {
@@ -90,7 +98,8 @@ export function useInvoke<A extends AnyArgs, R>(
 
 /**
  * Hook-style subscription to a main -> renderer event.
- * Returns a signal that holds the latest payload.
+ * Returns a signal that holds the latest payload; it is `undefined` until the
+ * first event arrives.
  *
  * @example
  *   const userUpdated = useEvent(api.events['user:updated'])
@@ -99,8 +108,8 @@ export function useInvoke<A extends AnyArgs, R>(
  */
 export function useEvent<P>(
   token: EventToken<P>,
-): Signal<P> {
-  const s = signal<P>()
+): Signal<P | undefined> {
+  const s = signal<P | undefined>(undefined)
   window.api.on(token, (payload) => s.set(payload))
   return s
 }

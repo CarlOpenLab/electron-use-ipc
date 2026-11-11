@@ -1,5 +1,4 @@
-
-import { BrowserWindow, IpcMainEvent, IpcMainInvokeEvent } from 'electron'
+import type { BrowserWindow, IpcMainEvent, IpcMainInvokeEvent } from 'electron'
 import type {
   ApiSchema,
   EventPayload,

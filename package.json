@@ -46,8 +46,11 @@
   "scripts": {
     "build": "tsup src/index.ts src/core/index.ts src/main/index.ts src/preload/index.ts src/renderer/index.ts --format esm --dts --clean --external electron --target es2020 --sourcemap --no-splitting",
     "typecheck": "tsc --noEmit",
+    "test:negative": "tsc --noEmit -p tsconfig.negative.json",
+    "test:runtime": "node tests/build.mjs && node --test tests/.build/runtime.test.mjs",
     "test:consumer": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext --target es2022 --skipLibCheck smoke/consumer.ts",
-    "prepublishOnly": "npm run typecheck && npm run build && npm run test:consumer"
+    "test": "npm run typecheck && npm run test:negative && npm run test:runtime",
+    "prepublishOnly": "npm run test && npm run build && npm run test:consumer"
   },
   "peerDependencies": {
     "electron": ">=20",

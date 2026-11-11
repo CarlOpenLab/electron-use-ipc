@@ -2,13 +2,14 @@ import type {
   AnyArgs,
   ApiSchema,
   EventToken,
+  FilledApi,
   InvokeToken,
   SendSyncToken,
 } from './types'
 
 /**
  * Define a request/response IPC method. Returns a type token.
- * 
+ *
  * @example
  *   getUser: defineInvoke<[string], User>()
  */
@@ -19,14 +20,14 @@ export function defineInvoke<
   return {
     __kind: 'invoke',
     __path: '',
-  } as never
+  } as unknown as InvokeToken<Args, Return>
 }
 
 /**
  * Define a synchronous request/response IPC method. Returns a type token.
- * 
+ *
  * @example
- *   getUser: defineSendSync<[string], User>()
+ *   isDarkMode: defineSendSync<[], boolean>()
  */
 export function defineSendSync<
   Args extends AnyArgs = [],
@@ -35,7 +36,7 @@ export function defineSendSync<
   return {
     __kind: 'sendSync',
     __path: '',
-  } as never
+  } as unknown as SendSyncToken<Args, Return>
 }
 
 /**
@@ -49,8 +50,8 @@ export function defineEvent<Payload = void>(): EventToken<Payload> {
 
 /**
  * Define an IPC API contract. Walks the schema and stamps each token with its
- * channel path (derived from its key). Type of the schema is preserved, so all
- * downstream consumers infer args/return/payload automatically.
+ * channel path (derived from its key). Groups the caller omitted are filled
+ * with `{}`; supplied groups keep their exact literal types.
  *
  * @example
  *   export const api = defineApi({
@@ -63,7 +64,9 @@ export function defineEvent<Payload = void>(): EventToken<Payload> {
  *     },
  *   })
  */
-export function defineApi<const S extends Partial<ApiSchema>>(schema: S): S & ApiSchema {
+export function defineApi<const S extends Partial<ApiSchema>>(
+  schema: S,
+): FilledApi<S> {
   if (schema.invoke) {
     for (const key of Object.keys(schema.invoke)) {
       const t = schema.invoke[key]
@@ -89,5 +92,5 @@ export function defineApi<const S extends Partial<ApiSchema>>(schema: S): S & Ap
     sendSync: {},
     events: {},
     ...schema,
-  } as S & ApiSchema
+  } as unknown as FilledApi<S>
 }

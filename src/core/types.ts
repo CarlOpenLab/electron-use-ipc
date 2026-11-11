@@ -39,18 +39,29 @@ export interface EventToken<Payload = void> {
 }
 
 /**
- * Shape of an API definition.
- * 
- * `invoke`/`sendSync`/`events` are all required so that
- * e.g. `api.invoke.foo` never widens to `| undefined`.
- * 
- * Note that `defineApi` will accept a `Partial<ApiSchema>` and handle the
- * not-undefined requirement for you.
- **/
+ * Shape of a *fully filled* API definition, used as the constraint of
+ * `registerMain` / `exposeBridge`. All three groups are required so that
+ * `api.invoke.foo` never widens to `| undefined` in those helpers.
+ */
 export interface ApiSchema {
   invoke: Record<string, InvokeToken<any, any>>
   sendSync: Record<string, SendSyncToken<any, any>>
   events: Record<string, EventToken<any>>
+}
+
+/**
+ * The return type of `defineApi`: groups the caller omitted are filled with
+ * `{}`, while groups that WERE supplied keep their exact literal keys.
+ *
+ * IMPORTANT: do not replace this with `S & ApiSchema`. Intersecting with
+ * `ApiSchema` introduces a `Record<string, InvokeToken<any, any>>` index
+ * signature, which turns typos such as `api.invoke.getUesr` into a valid
+ * `InvokeToken<any, any>` and defeats the whole point of the library.
+ */
+export type FilledApi<S extends Partial<ApiSchema>> = {
+  invoke: S extends { invoke: infer I } ? I : {}
+  sendSync: S extends { sendSync: infer SS } ? SS : {}
+  events: S extends { events: infer E } ? E : {}
 }
 
 /* ----------------------- type-level extractors ----------------------- */
@@ -69,14 +80,22 @@ export interface Bridge {
     token: InvokeToken<A, R>,
     ...args: A
   ): Promise<R>
-  
+
   sendSync<A extends AnyArgs, R>(
     token: SendSyncToken<A, R>,
     ...args: A
-  ): R
+  ): R | IpcErrorEnvelope
 
   on<P>(
     token: EventToken<P>,
     cb: (payload: P) => void
   ): () => void
+}
+
+/**
+ * Structured-clone-safe envelope used to carry a main-process exception back
+ * through `ipcRenderer.sendSync`. See `core/errors.ts`.
+ */
+export interface IpcErrorEnvelope {
+  readonly __eui_error__: string
 }
