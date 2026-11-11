@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { ApiSchema } from '../core/types'
-import { eventChannel, invokeChannel } from '../core/channels'
+import { eventChannel, invokeChannel, sendSyncChannel } from '../core/channels'
 
 /**
  * Expose the typed bridge to the renderer via `contextBridge`.
@@ -20,7 +20,16 @@ export function exposeBridge<S extends ApiSchema>(
 ): void {
   const bridge = {
     invoke(token: { __path: string }, ...args: unknown[]) {
-      return ipcRenderer.invoke(invokeChannel(token as never), ...args)
+      return ipcRenderer.invoke(
+        invokeChannel(token as never),
+        ...args
+      )
+    },
+    sendSync(token: { __path: string }, ...args: unknown[]) {
+      return ipcRenderer.sendSync(
+        sendSyncChannel(token as never),
+        ...args,
+      )
     },
     on(
       token: { __path: string },

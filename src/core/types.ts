@@ -20,6 +20,17 @@ export interface InvokeToken<
   readonly __return: Return
 }
 
+/** Type token for a synchronous request/response IPC method. */
+export interface SendSyncToken<
+  Args extends AnyArgs = [],
+  Return = void,
+> {
+  readonly __kind: 'sendSync'
+  readonly __path: string
+  readonly __args: Args
+  readonly __return: Return
+}
+
 /** Type token for a one-way event pushed from main to renderer. */
 export interface EventToken<Payload = void> {
   readonly __kind: 'event'
@@ -27,37 +38,45 @@ export interface EventToken<Payload = void> {
   readonly __payload: Payload
 }
 
-/** Shape of an API definition. `invoke`/`events` are required (use `{}` if empty)
- * so that `api.invoke.foo` never widens to `| undefined`. */
+/**
+ * Shape of an API definition.
+ * 
+ * `invoke`/`sendSync`/`events` are all required so that
+ * e.g. `api.invoke.foo` never widens to `| undefined`.
+ * 
+ * Note that `defineApi` will accept a `Partial<ApiSchema>` and handle the
+ * not-undefined requirement for you.
+ **/
 export interface ApiSchema {
   invoke: Record<string, InvokeToken<any, any>>
+  sendSync: Record<string, SendSyncToken<any, any>>
   events: Record<string, EventToken<any>>
 }
 
 /* ----------------------- type-level extractors ----------------------- */
 
+export type SendSyncArgs<T> = T extends SendSyncToken<infer A, any> ? A : never
+export type SendSyncReturn<T> = T extends SendSyncToken<any, infer R> ? R : never
+
 export type InvokeArgs<T> = T extends InvokeToken<infer A, any> ? A : never
 export type InvokeReturn<T> = T extends InvokeToken<any, infer R> ? R : never
+
 export type EventPayload<T> = T extends EventToken<infer P> ? P : never
-
-/** Mapped handler map for the main process. */
-export type InvokeHandlers<S extends ApiSchema> = {
-  [K in keyof NonNullable<S['invoke']>]?: (
-    ...args: InvokeArgs<NonNullable<S['invoke']>[K]>
-  ) => InvokeReturn<NonNullable<S['invoke']>[K]> | Promise<InvokeReturn<NonNullable<S['invoke']>[K]>>
-}
-
-/** The event emitter returned by `registerMain`. */
-export interface EventEmitter<S extends ApiSchema> {
-  emit<K extends keyof NonNullable<S['events']>>(
-    token: NonNullable<S['events']>[K],
-    ...payload: EventPayload<NonNullable<S['events']>[K]> extends void ? [] : [EventPayload<NonNullable<S['events']>[K]>]
-  ): void
-  dispose(): void
-}
 
 /** The bridge contract exposed on `window.api` by the preload script. */
 export interface Bridge {
-  invoke<A extends AnyArgs, R>(token: InvokeToken<A, R>, ...args: A): Promise<R>
-  on<P>(token: EventToken<P>, cb: (payload: P) => void): () => void
+  invoke<A extends AnyArgs, R>(
+    token: InvokeToken<A, R>,
+    ...args: A
+  ): Promise<R>
+  
+  sendSync<A extends AnyArgs, R>(
+    token: SendSyncToken<A, R>,
+    ...args: A
+  ): R
+
+  on<P>(
+    token: EventToken<P>,
+    cb: (payload: P) => void
+  ): () => void
 }
