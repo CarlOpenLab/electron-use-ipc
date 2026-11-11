@@ -100,8 +100,14 @@ main.emitTo(win, api.events['user:updated'], u)   // send to one window only
   same method in two groups (e.g. `invoke` and `invokeWithEvent`) throws at startup.
 - A handler name that is not in the schema throws at startup (and is a TypeScript
   error as well).
+- Duplicate detection is **process-wide**: a second `registerMain()` cannot attach
+  another listener to a channel and silently overwrite its reply. Call `dispose()`
+  on the earlier result before re-registering.
+- Registration is **atomic**: if anything throws, every handler and listener this
+  call installed is rolled back, so fixing the mistake and retrying just works.
 - Methods with **no** handler produce a startup `console.warn` instead of failing
-  only when a renderer calls them.
+  only when a renderer calls them. A `sendSync` method additionally gets a
+  fallback reply, so a missing handler can never hang the renderer.
 
 ### 3. Preload
 

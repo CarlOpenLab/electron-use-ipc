@@ -49,6 +49,11 @@ const two: string = sendSync(api.sendSync.windowAware, 1)
 void one
 void two
 
+// The raw bridge keeps the declared return type: the error envelope is an
+// internal transport detail and must not leak into the public window.api type.
+const direct: string = window.api.sendSync(api.sendSync.windowAware, 1)
+void direct
+
 exposeBridge(api)
 
 const s = signal(0)

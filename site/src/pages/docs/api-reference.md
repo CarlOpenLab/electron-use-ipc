@@ -35,10 +35,18 @@ schema methods — the `WithEvent` variants prepend the Electron event object, a
 the `WithSenderId` variants prepend `event.sender.id`.
 
 - Each method may be registered in **exactly one** group. A duplicate throws at
-  startup instead of one handler silently overwriting the other.
+  startup instead of one handler silently overwriting the other. Ownership is
+  tracked process-wide, so a second `registerMain()` call cannot attach another
+  `ipcMain.on` listener to the same channel and silently win with the last
+  `event.returnValue` write. Call `dispose()` before re-registering.
+- Registration is atomic: a failed call rolls back every handler and listener it
+  already installed, so a retry succeeds instead of hitting "Attempted to
+  register a second handler".
 - A handler name that is not in the schema throws at startup (and is a compile
   error in TypeScript).
-- Methods with no handler at all produce a startup `console.warn`.
+- Methods with no handler at all produce a startup `console.warn`. `sendSync`
+  methods also receive a fallback listener that replies with an error; it yields
+  automatically if a real handler is registered by a later call.
 
 ## Error handling
 
@@ -77,7 +85,8 @@ try {
 renderer process until the main process replies. Electron's documentation calls
 it a "last resort" — prefer `invoke` unless you genuinely cannot `await` (for
 example reading the native theme before `ready-to-show`). Never leave a
-`sendSync` method without a handler.
+`sendSync` method without a real handler: the fallback reply throws in the
+renderer rather than hanging it, but it still signals a configuration error.
 
 **`useEvent` has no teardown.** It subscribes to the underlying IPC channel when the
 hook is created and does not expose an unsubscribe function, so calling it inside a

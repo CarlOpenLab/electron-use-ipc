@@ -130,12 +130,14 @@ test('registerMain warns about methods with no handler', () => {
   const warnings: string[] = []
   const original = console.warn
   console.warn = (msg: string) => { warnings.push(msg) }
+  let main: ReturnType<typeof registerMain>
   try {
-    registerMain(api, { sendSync: { handled: () => 'ok' } } as any)
+    main = registerMain(api, { sendSync: { handled: () => 'ok' } } as any)
   } finally {
     console.warn = original
   }
   assert.match(warnings.join(' '), /sendSync\.unhandled/)
+  main!.dispose()
 })
 
 test('an unregistered sendSync method replies with an error instead of hanging', () => {
@@ -219,4 +221,42 @@ test('useEvent and useInvoke work through the bridge', async () => {
   assert.deepEqual(hook.data.get(), { id: 'z', name: 'z' })
   assert.equal(hook.loading.get(), false)
   main.dispose()
+})
+
+test('a failed registerMain rolls back: no half-registered process state', async () => {
+  __reset()
+  const api = makeApi()
+  exposeBridge(api)
+
+  // getUser is registered first, then the duplicate blows up half way through.
+  assert.throws(
+    () => registerMain(api, {
+      invoke: { getUser: async (id: string) => ({ id, name: id }) },
+      sendSync: { duplicate: () => 'a' },
+      sendSyncWithSenderId: { duplicate: () => 'b' },
+    } as any),
+    /duplicate handler/,
+  )
+
+  // Retrying must work. If the failed call leaked its handlers, ipcMain.handle
+  // will reject with "Attempted to register a second handler".
+  const main = registerMain(api, allHandlers() as any)
+  assert.deepEqual(await invoke(api.invoke.getUser, 'x'), { id: 'x', name: 'x' })
+  main.dispose()
+})
+
+test('two registerMain calls cannot silently shadow a sendSync channel', () => {
+  __reset()
+  const api = makeApi()
+  exposeBridge(api)
+  const first = registerMain(api, { sendSync: { isDark: () => true } } as any)
+
+  // ipcMain.on allows several listeners per channel; without a process-wide
+  // registry the second call would silently overwrite event.returnValue.
+  assert.throws(
+    () => registerMain(api, { sendSyncWithEvent: { isDark: () => false } } as any),
+    /already registered|duplicate handler/,
+  )
+  assert.equal(sendSync(api.sendSync.isDark), true)
+  first.dispose()
 })

@@ -42,11 +42,18 @@ export function sendSync<A extends AnyArgs, R>(
   token: SendSyncToken<A, R>,
   ...args: A
 ): R {
-  const result = window.api.sendSync(token, ...args)
+  // `window.api` is typed as returning R; the envelope is a private transport
+  // detail, so widen to unknown before inspecting it.
+  const result: unknown = window.api.sendSync(token, ...args)
   if (isIpcErrorEnvelope(result)) {
-    throw new Error(result.__eui_error__)
+    const error = new Error(result.message)
+    error.name = result.name
+    // Restore the main-process stack: the renderer-side stack would only point
+    // at this helper and hide where the exception was actually thrown.
+    if (result.stack) error.stack = result.stack
+    throw error
   }
-  return result
+  return result as R
 }
 
 export interface UseInvokeResult<A extends AnyArgs, R> {

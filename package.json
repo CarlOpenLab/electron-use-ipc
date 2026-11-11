@@ -6,7 +6,8 @@
   "packageManager": "pnpm@11.20.0",
   "license": "MIT",
   "files": [
-    "dist"
+    "dist",
+    "CHANGELOG.md"
   ],
   "homepage": "https://carlopenlab.github.io/electron-use-ipc/",
   "repository": {

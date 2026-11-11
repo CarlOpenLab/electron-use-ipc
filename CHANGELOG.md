@@ -27,6 +27,20 @@ Fixes following the review of #2 (merged in `34bf4847`).
   method in two handler groups, or a handler name that is not in the schema,
   now throws at startup. Methods with no handler produce a `console.warn`
   instead of failing only when a renderer calls them.
+- **Registration is atomic and process-wide.** A failed `registerMain` now
+  rolls back every handler and listener it already installed; previously a
+  leaked `ipcMain.handle` made any retry fail with "Attempted to register a
+  second handler". Duplicate detection is process-wide instead of per-call, so
+  a second `registerMain` can no longer attach another `ipcMain.on` listener
+  and silently overwrite `event.returnValue`. Fallback listeners yield to a
+  real handler installed by a later call, and the startup warning no longer
+  reports methods already served by another call.
+- **`window.api.sendSync` keeps its declared return type.** The error envelope
+  is an internal transport detail and no longer widens the public `Bridge`
+  signature to `R | IpcErrorEnvelope`; `sendSync()` widens to `unknown` and
+  unwraps internally. Envelopes now carry a private discriminator plus `name`
+  and the main-process `stack`, instead of only a message, so user data cannot
+  be mistaken for an error and the original stack survives the trip.
 - **README examples compile.** Fixed a stray semicolon inside an object
   literal, replaced the non-existent `api.sendSync.getWindowTitle(69)` call with
   real `invoke()` / `sendSync()` usage, refreshed the API table (`emitTo`,
@@ -52,7 +66,8 @@ Fixes following the review of #2 (merged in `34bf4847`).
   `toIpcErrorEnvelope` exports from `./core`.
 - `examples/neg-check.ts` now also covers misspelled schema keys / handler
   names and async `sendSync` handlers.
-- `test:runtime`: `node:test` suite against a lightweight `ipcMain` /
+- `test:runtime`: 13 `node:test` cases against a lightweight `ipcMain` /
   `ipcRenderer` mock, covering all six handler groups, error propagation,
-  duplicate registration, `emit` / `emitTo` and `dispose`.
+  duplicate registration, atomic rollback after a failed registration,
+  process-wide channel ownership, `emit` / `emitTo` and `dispose`.
 - `test:negative`, `test` and an expanded `prepublishOnly`.

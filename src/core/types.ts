@@ -84,7 +84,7 @@ export interface Bridge {
   sendSync<A extends AnyArgs, R>(
     token: SendSyncToken<A, R>,
     ...args: A
-  ): R | IpcErrorEnvelope
+  ): R
 
   on<P>(
     token: EventToken<P>,
@@ -94,8 +94,16 @@ export interface Bridge {
 
 /**
  * Structured-clone-safe envelope used to carry a main-process exception back
- * through `ipcRenderer.sendSync`. See `core/errors.ts`.
+ * through `ipcRenderer.sendSync`. This is an internal transport detail: the
+ * public `Bridge.sendSync` signature still returns `R`, and the renderer-side
+ * `sendSync()` helper unwraps it back into a thrown `Error`.
+ * See `core/errors.ts`.
  */
 export interface IpcErrorEnvelope {
+  /** Private discriminator checked by `isIpcErrorEnvelope`. */
   readonly __eui_error__: string
+  readonly message: string
+  readonly name: string
+  /** Stack of the main-process exception, when available. */
+  readonly stack?: string
 }
