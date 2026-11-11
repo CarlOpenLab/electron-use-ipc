@@ -1,6 +1,6 @@
 {
   "name": "@cc-heart/electron-use-ipc",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Type-safe Electron IPC with hook-style APIs",
   "type": "module",
   "packageManager": "pnpm@11.20.0",
